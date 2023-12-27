@@ -4,7 +4,8 @@ import * as cdk from 'aws-cdk-lib';
 import { NeoReshipiCdkStack } from '../lib/neo-reshipi-cdk-stack';
 
 const app = new cdk.App();
-new NeoReshipiCdkStack(app, 'NeoReshipiCdkStack', {
+new NeoReshipiCdkStack(app, 'NeoReshipiCdkStack', {});
+
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
@@ -18,4 +19,3 @@ new NeoReshipiCdkStack(app, 'NeoReshipiCdkStack', {
   // env: { account: '123456789012', region: 'us-east-1' },
 
   /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
-});
