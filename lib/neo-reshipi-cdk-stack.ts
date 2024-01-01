@@ -18,7 +18,7 @@ import{
 import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Bucket } from "aws-cdk-lib/aws-s3";
 import { BucketDeployment,Source } from "aws-cdk-lib/aws-s3-deployment";  
-import { Construct } from 'constructs';
+import { Construct } from "constructs";
 import * as sqs from 'aws-cdk-lib/aws-sqs';
 import {
   AllowedMethods,
@@ -33,7 +33,7 @@ import {
 } from "aws-cdk-lib/aws-cloudfront"
 import{
   HttpOrigin,
-  S3Orign,
+  S3Origin,
 } from "aws-cdk-lib/aws-cloudfront-origins"
 
 export class NeoReshipiCdkStack extends Stack {
@@ -57,8 +57,8 @@ export class NeoReshipiCdkStack extends Stack {
 
     //CloudFrontにS3バケットを紐づけるための『S3Origin』
     //あとでCloudFrontのDistributionリソース内に組み込ませる
-    const nuxt3BucketOrigin = new S3Orign(nuxt3Bucket,{
-      OriginAccessIdentity:nuxt3Oai,
+    const nuxt3BucketOrigin = new S3Origin(nuxt3Bucket,{
+      originAccessIdentity:nuxt3Oai,
     });
 
     
@@ -71,13 +71,15 @@ export class NeoReshipiCdkStack extends Stack {
       //実行させる関数の名前をファイル名込みで指定
       handler:"index.handler",
       //タイムアウト時間を指定
-      timeoiut:Duration.seconds(5),
+      timeout:Duration.seconds(5),
       //メモリーサイズを指定
       memorySize:2048,
       //ログの保持を指定
-      logRetention:RetentionDays,ONE_MONTH,
+      logRetention:RetentionDays.ONE_MONTH,
     });
     //定義したコンストラクトをaddFunctonUrlでlambda関数URLを定義
+    //この段階では実際のURLではなく、デプロイ時にURLとし置き換えて解釈されるトークン
+    //なので後述するFnメソッドでドメイン部分を抽出する
     const functionUrl = lambda.addFunctionUrl({
       //認証を必要としないのでNONEを指定
       authType:FunctionUrlAuthType.NONE,
@@ -95,7 +97,7 @@ export class NeoReshipiCdkStack extends Stack {
       const distribution = new Distribution(this,"cdn",{
 
         //価格クラス。設定ごとに金と地域が異なる
-        PriceClass:PriceClass.PRICE_CLASS_200,
+        priceClass:PriceClass.PRICE_CLASS_200,
 
         //デフォルトのビヘイビア。もっとも優先度が低い
         defaultBehavior:{
@@ -130,7 +132,7 @@ export class NeoReshipiCdkStack extends Stack {
         },
 
         //デフォルト以外のビヘイビア。今回は拡張子のある場合にヒットするバスパターン一つのみ定義
-        additionalBehavior:{
+        additionalBehaviors:{
           //オブジェクトのキーにパスパターンを指定する
           //拡張子を含むパスにヒットさせる意図
           "/*.*":{
@@ -138,10 +140,10 @@ export class NeoReshipiCdkStack extends Stack {
             origin:nuxt3BucketOrigin,
 
             //静的コンテンツの取得なのでPOST等のHTTPメソッドは不要
-            allowedMethods:AllowedMethods.GET_HEAD,
+            allowedMethods:AllowedMethods.ALLOW_GET_HEAD,
 
             //オリジンへのリクエスト制御リソース
-            OriginRequestPolicy: new OriginRequestPolicy(
+            originRequestPolicy: new OriginRequestPolicy(
               this,
               "nuxt3OriginRequestPolicy",
               {
@@ -171,7 +173,7 @@ export class NeoReshipiCdkStack extends Stack {
           //デプロイ先のバケットを指定
           destinationBucket:nuxt3Bucket,
           //ログを保持する期間を指定
-          logRetention: RetentionDays,ONE_MONTH,
+          logRetention: RetentionDays.ONE_MONTH,
           //オプションでCloudFrontを指定することで
           //新たにデプロイした際にキャッシュを削除してくれる
           distribution,
