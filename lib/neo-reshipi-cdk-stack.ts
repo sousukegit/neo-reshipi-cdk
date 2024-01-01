@@ -35,10 +35,14 @@ import{
   HttpOrigin,
   S3Origin,
 } from "aws-cdk-lib/aws-cloudfront-origins"
+import "dotenv/config"
 
 export class NeoReshipiCdkStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
+
+    //環境変数
+    const referer = process.env.REFERER ?? "";
 
     //--S3のバケット作成
     const nuxt3Bucket = new Bucket(this, "nuxt3Bucket" ,{
@@ -90,7 +94,12 @@ export class NeoReshipiCdkStack extends Stack {
     //Lambda関数URL以外でも使うことができる
     const lambdaOrigin = new HttpOrigin(
       //Lambda関数のURLからドメイン部分だけを抽出する
-      Fn.select(2,Fn.split("/",functionUrl.url))
+      Fn.select(2,Fn.split("/",functionUrl.url)),
+      {
+        //CloudFrontからLambda関数URLsへ渡すカスタムヘッダー
+        //下記Refereを用いてCloudFront以外のアクセスを制限
+        customHeaders:{referer},
+      }
     ); 
 
     //----CloudFront------
