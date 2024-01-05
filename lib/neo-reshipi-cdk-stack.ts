@@ -19,7 +19,6 @@ import { RetentionDays } from "aws-cdk-lib/aws-logs";
 import { Bucket } from "aws-cdk-lib/aws-s3";
 import { BucketDeployment,Source } from "aws-cdk-lib/aws-s3-deployment";  
 import { Construct } from "constructs";
-import * as sqs from 'aws-cdk-lib/aws-sqs';
 import {
   AllowedMethods,
   CachePolicy,
@@ -36,6 +35,7 @@ import{
   S3Origin,
 } from "aws-cdk-lib/aws-cloudfront-origins"
 import "dotenv/config"
+import { AttributeType, Table } from 'aws-cdk-lib/aws-dynamodb';
 
 export class NeoReshipiCdkStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -66,12 +66,13 @@ export class NeoReshipiCdkStack extends Stack {
     });
 
     
+    
     //lambda関数の定義
     const lambda = new Function(this,"nitro",{
       //実行環境を指定
       runtime:Runtime.NODEJS_18_X,
       //lambda関数としてアップロードする関数のディレクトリを指定
-      code:Code.fromAsset("../portfolio-nuxt3/.output/server"),
+      code:Code.fromAsset("../neo-reshipi/.output/server"),
       //実行させる関数の名前をファイル名込みで指定
       handler:"index.handler",
       //タイムアウト時間を指定
@@ -101,6 +102,39 @@ export class NeoReshipiCdkStack extends Stack {
         customHeaders:{referer},
       }
     ); 
+
+    //----DynanoDB--
+    //DynanoDBのテーブルを定義するリソース
+    const portfolioTable = new Table(this,"portfolioTable",{
+      
+      //テーブルのパーティションキーを定義
+      //キー名はIDで値の型には文字列を指定
+      partitionKey:{
+        name:"id",
+        type:AttributeType.STRING,
+      },
+
+      //ソートキーを定義
+      //キー名は【CreateAt】で数字型
+      sortKey:{
+        name:"createAt",
+        type:AttributeType.NUMBER,
+      },
+
+      //テーブル名
+      tableName:"portfolioTable",
+
+      //リソース削除時の挙動を定義
+      removalPolicy:RemovalPolicy.DESTROY,
+
+      //有効期限の指定に用いるカラム名
+      timeToLiveAttribute:"ttl",
+    });
+
+    //Nuxt3のサーバー再度を動かしているLamdbaのリソースに
+    //DynanoDBの読み書きを許可する
+    portfolioTable.grantReadWriteData(lambda);
+
 
     //----CloudFront------
       const distribution = new Distribution(this,"cdn",{
