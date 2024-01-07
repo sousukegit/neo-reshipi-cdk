@@ -103,8 +103,8 @@ export class NeoReshipiCdkStack extends Stack {
       }
     ); 
 
-    //----DynanoDB--
-    //DynanoDBのテーブルを定義するリソース
+    //----DynamoDB--
+    //DynamoDBのテーブルを定義するリソース
     const portfolioTable = new Table(this,"portfolioTable",{
       
       //テーブルのパーティションキーを定義
